@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, shutil
+import os
 from conans import ConanFile, tools
 
 
@@ -16,13 +16,13 @@ class SuiteSparseConan(ConanFile):
 
     # Not available for Windows
     settings = {
-        'os':   ['Linux'],
-        'arch': ['x86_64', 'x86'],
+        'os':         ['Linux'],
+        'arch':       ['x86_64', 'x86'],
         'build_type': ['Release', 'Debug'],
-        'compiler': ['gcc', 'clang']
+        'compiler':   ['gcc', 'clang']
     }
 
-    def system_requirements(self):
+    def build_requirements(self):
         pack_names = None
         if tools.os_info.linux_distro == "ubuntu":
             pack_names = [
@@ -41,7 +41,7 @@ class SuiteSparseConan(ConanFile):
                 installer.update() # Update the package database
                 installer.install(" ".join(pack_names)) # Install the package
             except ConanException:
-                self.output.warn('Could not run system updates')
+                self.output.warn('Could not run system updates to fetch build requirements.')
 
     def source(self):
         archive = 'SuiteSparse-%s.tar.gz'%self.version
@@ -59,5 +59,8 @@ class SuiteSparseConan(ConanFile):
         self.copy(pattern='*',  dst='share',    src=os.path.join('SuiteSparse', 'share'),    excludes='.gitignore')
         self.copy(pattern='*',  dst='bin',      src=os.path.join('SuiteSparse', 'bin'),      excludes='.gitignore')
         self.copy(pattern='*',  dst='include/suitesparse', src=os.path.join('SuiteSparse', 'include'),  excludes='.gitignore')
+
+    def package_info(self):
+        self.cpp_info.libs = tools.collect_libs(self)
 
 # vim: ts=4 sw=4 expandtab ffs=unix ft=python foldmethod=marker :
