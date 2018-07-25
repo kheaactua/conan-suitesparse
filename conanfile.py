@@ -3,6 +3,7 @@
 
 import os
 from conans import ConanFile, tools
+from conans.errors import ConanException
 
 
 class SuiteSparseConan(ConanFile):
