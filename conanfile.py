@@ -123,5 +123,7 @@ conan_basic_setup()''')
 
             # Add the DLLs to the RUNPATH
             self.env_info.path.append(os.path.join(self.package_folder, 'lapack_windows', 'x32' if 'x86' == self.settings.arch else 'win64'))
+        elif 'Linux' == self.settings.os:
+            self.env_info.LD_LIBRARY_PATH.append(os.path.join(self.package_folder, 'lib'))
 
 # vim: ts=4 sw=4 expandtab ffs=unix ft=python foldmethod=marker :
