@@ -47,7 +47,10 @@ class SuiteSparseConan(ConanFile):
 
     def _source_linux(self):
         archive = 'SuiteSparse-%s.tar.gz'%self.version
-        tools.download('http://faculty.cse.tamu.edu/davis/SuiteSparse/%s'%archive, archive)
+
+        from source_cache import copyFromCache
+        if not copyFromCache(archive):
+            tools.download('http://faculty.cse.tamu.edu/davis/SuiteSparse/%s'%archive, archive)
         tools.unzip(archive)
 
         tools.check_md5(archive, self.md5_hash)
