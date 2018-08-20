@@ -9,8 +9,6 @@ from conans.errors import ConanException
 
 
 class SuiteSparseConan(ConanFile):
-    """ Tested with versions 3.3.4 and 3.2.9 """
-
     name        = 'suitesparse'
     version     = '5.2.0' # TODO windows version might be 5.1.2
     license     = 'AMD License: BSD 3-clause'
@@ -18,14 +16,20 @@ class SuiteSparseConan(ConanFile):
     url         = 'https://github.com/kheaactua/conan-suitesparse'
     settings    = 'os', 'compiler', 'build_type', 'arch'
     generators  = 'cmake'
+    requires    = (
+        'openblas/[>=0.2.20]@ntc/stable',
+        'helpers/[>=0.3]@ntc/stable',
+    )
 
     # Hash for Linux download
     md5_hash  = '8e625539dbeed061cc62fbdfed9be7cf'
 
+
     def build_requirements(self):
         pack_names = None
         if tools.os_info.linux_distro == "ubuntu":
-            pack_names = ['liblapack-dev', 'build-essential', 'libopenblas-dev']
+            pack_names = ['liblapack-dev', 'build-essential']
+            # 'libopenblas-dev' doesn't exist on tegra.
 
             if self.settings.arch == "x86":
                 full_pack_names = []
@@ -51,9 +55,16 @@ class SuiteSparseConan(ConanFile):
         from source_cache import copyFromCache
         if not copyFromCache(archive):
             tools.download('http://faculty.cse.tamu.edu/davis/SuiteSparse/%s'%archive, archive)
+        tools.check_md5(archive, self.md5_hash)
+
         tools.unzip(archive)
 
-        tools.check_md5(archive, self.md5_hash)
+        # LDFLAGS isn't used prevasively enough, so we need to hack the Makefile.
+        tools.replace_in_file(
+            file_path='SuiteSparse/SuiteSparse_config/SuiteSparse_config.mk',
+            search='BLAS = -lopenblas',
+            replace='BLAS = -L%s -lopenblas'%(self.deps_cpp_info['openblas'].rootpath + '/lib'),
+        )
 
     def _source_win(self):
         self.run("git clone --depth 1 https://github.com/ComFreek/suitesparse-metis-for-windows.git suitesparse")
@@ -72,7 +83,13 @@ conan_basic_setup()''')
         else: self._build_win()
 
     def _build_linux(self):
-        self.run('cd SuiteSparse && make -j %d'%tools.cpu_count())
+        env_vars = {
+            'LDFLAGS':         '-L%s/lib'%self.deps_cpp_info['openblas'].rootpath,
+            'LD_LIBRARY_PATH': '%s/lib'%self.deps_cpp_info['openblas'].rootpath,
+        }
+
+        with tools.environment_append(env_vars):
+            self.run('cd SuiteSparse && make -j %d'%tools.cpu_count())
 
     def _build_win(self):
         cmake = CMake(self)
