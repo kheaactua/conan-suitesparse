@@ -19,8 +19,8 @@ class SuiteSparseConan(ConanFile):
     requires    = (
         'helpers/[>=0.3]@ntc/stable',
     )
-    options         = {
-        'blas':        ['openblas', 'system'], # System basically doesn't do anything which should search system paths
+    options     = {
+        'blas': ['openblas', 'system'], # System basically doesn't do anything which should search system paths
     }
     default_options = (
         'blas=system'
@@ -38,17 +38,17 @@ class SuiteSparseConan(ConanFile):
                 # Note: openblas doesn't exist on tegra.
                 pack_names.append('libopenblas-dev')
 
-            if self.settings.arch == "x86":
+            if self.settings.arch == 'x86':
                 full_pack_names = []
                 for pack_name in pack_names:
-                    full_pack_names += [pack_name + ":i386"]
+                    full_pack_names += [pack_name + ':i386']
                 pack_names = full_pack_names
 
         if pack_names:
             installer = tools.SystemPackageTool()
             try:
                 installer.update() # Update the package database
-                installer.install(" ".join(pack_names)) # Install the package
+                installer.install(' '.join(pack_names)) # Install the package
             except ConanException:
                 self.output.warn('Could not run system updates to fetch build requirements.')
 
@@ -98,8 +98,8 @@ conan_basic_setup()''')
         env_vars = {}
 
         if 'openblas' in self.deps_cpp_info.deps:
-            env_vars['LDFLAGS']         = '-L%s/lib'%self.deps_cpp_info['openblas'].rootpath,
-            env_vars['LD_LIBRARY_PATH'] = '%s/lib'%self.deps_cpp_info['openblas'].rootpath,
+            env_vars['LDFLAGS']         = '-L%s/lib'%self.deps_cpp_info['openblas'].rootpath
+            env_vars['LD_LIBRARY_PATH'] = '%s/lib'%self.deps_cpp_info['openblas'].rootpath
 
         with tools.environment_append(env_vars):
             self.run('cd SuiteSparse && make -j %d'%tools.cpu_count())
