@@ -28,7 +28,6 @@ class SuiteSparseConan(ConanFile):
     settings = {'os': ['Linux']}
 
 
-
     def build_requirements(self):
         pack_names = None
         if tools.os_info.linux_distro == "ubuntu":
@@ -36,6 +35,7 @@ class SuiteSparseConan(ConanFile):
             if 'system' == self.options.blas:
                 # Note: openblas doesn't exist on tegra.
                 pack_names.append('libopenblas-dev')
+                pack_names.append('libblas-dev')
 
             if self.settings.arch == "x86":
                 full_pack_names = []
