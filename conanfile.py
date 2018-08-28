@@ -5,29 +5,28 @@ import os
 from conans import ConanFile, tools, CMake, MSBuild
 from conans.errors import ConanException
 
-# The Windows portion was inspired by https://github.com/ComFreek/suitesparse-conan-pkg
-
 
 class SuiteSparseConan(ConanFile):
     name        = 'suitesparse'
-    version     = '5.2.0' # TODO windows version might be 5.1.2
+    version     = '5.2.0'
     license     = 'AMD License: BSD 3-clause'
-    description = "Suite of sparse matrix software.  Current windows install is actually 5.1.2, not 5.2.0!"
+    description = 'Suite of sparse matrix software.'
     url         = 'https://github.com/kheaactua/conan-suitesparse'
     settings    = 'os', 'compiler', 'build_type', 'arch'
     generators  = 'cmake'
+    md5_hash  = '8e625539dbeed061cc62fbdfed9be7cf'
     requires    = (
         'helpers/[>=0.3]@ntc/stable',
     )
-    options         = {
-        'blas':        ['openblas', 'system'], # System basically doesn't do anything which should search system paths
+    options     = {
+        'blas': ['openblas', 'system'], # System basically doesn't do anything which should search system paths
     }
     default_options = (
         'blas=system'
     )
 
-    # Hash for Linux download
-    md5_hash  = '8e625539dbeed061cc62fbdfed9be7cf'
+    settings = {'os': ['Linux']}
+
 
 
     def build_requirements(self):
@@ -57,10 +56,6 @@ class SuiteSparseConan(ConanFile):
             self.requires('openblas/[>=0.2.20]@ntc/stable')
 
     def source(self):
-        if 'Linux' == self.settings.os: self._source_linux()
-        else: self._source_win()
-
-    def _source_linux(self):
         archive = 'SuiteSparse-%s.tar.gz'%self.version
 
         from source_cache import copyFromCache
@@ -78,23 +73,7 @@ class SuiteSparseConan(ConanFile):
                 replace='BLAS = -L%s -lopenblas'%(self.deps_cpp_info['openblas'].rootpath + '/lib'),
             )
 
-    def _source_win(self):
-        self.run("git clone --depth 1 https://github.com/ComFreek/suitesparse-metis-for-windows.git suitesparse")
-        self.run("cd suitesparse")
-
-        # This small hack might be useful to guarantee proper /MT /MD linkage
-        # in MSVC if the packaged project doesn't have variables to set it
-        # properly
-        tools.replace_in_file("suitesparse/CMakeLists.txt", "PROJECT(SuiteSparseProject)",
-            '''PROJECT(SuiteSparseProject)
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()''')
-
     def build(self):
-        if 'Linux' == self.settings.os: self._build_linux()
-        else: self._build_win()
-
-    def _build_linux(self):
         env_vars = {}
 
         if 'openblas' in self.deps_cpp_info.deps:
@@ -103,28 +82,6 @@ conan_basic_setup()''')
 
         with tools.environment_append(env_vars):
             self.run('cd SuiteSparse && make -j %d'%tools.cpu_count())
-
-    def _build_win(self):
-        cmake = CMake(self)
-        cmake.configure(source_folder="suitesparse")
-
-        msbuild = MSBuild(self)
-
-        # Usually, MSBuild tries to guess the "configuration" and "platform"
-        # (in Visual Studio Solution/Project terminology) to use for calling
-        # msbuild.exe. E.g. an x86_64 release build will lead to
-        # "configuration" = "Release" and "platform" = "x64", thus calling
-        # msbuild.exe with:
-        #   /p:Configuration=Debug /p:Platform="x64"
-        #
-        # However, the Visual Studio Solutions generated here (by CMake)
-        # will have their platform named "Win32" in case of Conan's arch being
-        # "x86".
-        # => Rewrite the "guess mapping"
-        msbuild.build("SuiteSparseProject.sln", platforms={'x86': 'Win32', 'x86_64': 'x64'})
-
-        # Not calling the install target because without using CMake, I think
-        # we'd need to hack the solution file to set the install path.
 
     def package(self):
         if 'Linux' == self.settings.os: self._package_linux()
@@ -136,27 +93,8 @@ conan_basic_setup()''')
         self.copy(pattern='*',  dst='bin',      src=os.path.join('SuiteSparse', 'bin'),      excludes='.gitignore')
         self.copy(pattern='*',  dst='include/suitesparse', src=os.path.join('SuiteSparse', 'include'),  excludes='.gitignore')
 
-    def _package_win(self):
-        self.copy("**/*.lib", dst="lib", keep_path=False)
-        self.copy("**/*.dll", dst="bin", keep_path=False)
-
-        dest = os.path.join('include', 'suitesparse')
-        self.copy(pattern='*.h',   dst=dest, keep_path=False)
-        self.copy(pattern='*.hpp', dst=dest, keep_path=False)
-
     def package_info(self):
         self.cpp_info.libs = tools.collect_libs(self)
-
-        if 'Windows' == self.settings.os:
-            # Some directories must be globally visible because
-            # some files (e.g. umfpack/umfpack.h) try to include from
-            # these without specifying a relative path.
-            self.cpp_info.includedirs = ["include", "include/amd", "include/suitesparse"]
-            # self.cpp_info.libs = ["suitesparseconfig.lib", "libumfpack"]
-
-            # Add the DLLs to the RUNPATH
-            self.env_info.path.append(os.path.join(self.package_folder, 'lapack_windows', 'x32' if 'x86' == self.settings.arch else 'win64'))
-        elif 'Linux' == self.settings.os:
-            self.env_info.LD_LIBRARY_PATH.append(os.path.join(self.package_folder, 'lib'))
+        self.env_info.LD_LIBRARY_PATH.append(os.path.join(self.package_folder, 'lib'))
 
 # vim: ts=4 sw=4 expandtab ffs=unix ft=python foldmethod=marker :
