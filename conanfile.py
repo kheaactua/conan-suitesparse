@@ -12,7 +12,6 @@ class SuiteSparseConan(ConanFile):
     license     = 'AMD License: BSD 3-clause'
     description = 'Suite of sparse matrix software.'
     url         = 'https://github.com/kheaactua/conan-suitesparse'
-    settings    = 'os', 'compiler', 'build_type', 'arch'
     generators  = 'cmake'
     md5_hash  = '8e625539dbeed061cc62fbdfed9be7cf'
     requires    = (
@@ -25,8 +24,7 @@ class SuiteSparseConan(ConanFile):
         'blas=system'
     )
 
-    settings = {'os': ['Linux']}
-
+    settings = {'os': ['Linux'], 'compiler': None, 'build_type': None, 'arch': None, 'arch_build': None}
 
     def build_requirements(self):
         pack_names = None
