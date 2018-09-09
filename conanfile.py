@@ -82,10 +82,6 @@ class SuiteSparseConan(ConanFile):
             self.run('cd SuiteSparse && make -j %d'%tools.cpu_count())
 
     def package(self):
-        if 'Linux' == self.settings.os: self._package_linux()
-        else: self._package_win()
-
-    def _package_linux(self):
         self.copy(pattern='*',  dst='lib',      src=os.path.join('SuiteSparse', 'lib'),      excludes='.gitignore')
         self.copy(pattern='*',  dst='share',    src=os.path.join('SuiteSparse', 'share'),    excludes='.gitignore')
         self.copy(pattern='*',  dst='bin',      src=os.path.join('SuiteSparse', 'bin'),      excludes='.gitignore')
