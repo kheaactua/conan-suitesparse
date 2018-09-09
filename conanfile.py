@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-from conans import ConanFile, tools, CMake, MSBuild
+from conans import ConanFile, tools
 from conans.errors import ConanException
 
 
@@ -75,8 +75,8 @@ class SuiteSparseConan(ConanFile):
         env_vars = {}
 
         if 'openblas' in self.deps_cpp_info.deps:
-            env_vars['LDFLAGS']         = '-L%s/lib'%self.deps_cpp_info['openblas'].rootpath,
-            env_vars['LD_LIBRARY_PATH'] = '%s/lib'%self.deps_cpp_info['openblas'].rootpath,
+            env_vars['LDFLAGS']         = '-L%s/lib'%self.deps_cpp_info['openblas'].rootpath
+            env_vars['LD_LIBRARY_PATH'] = '%s/lib'%self.deps_cpp_info['openblas'].rootpath
 
         with tools.environment_append(env_vars):
             self.run('cd SuiteSparse && make -j %d'%tools.cpu_count())
